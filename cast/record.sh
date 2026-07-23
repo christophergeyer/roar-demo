@@ -28,11 +28,16 @@ HASH=$(cat ACT1_HASH.txt)
 export COLUMNS=100 LINES=32
 
 echo "▸ recording the full demo → cast/demo.cast"
-rm -f cast/demo.cast
-AUTO=1 AUTO_PAUSE=3 asciinema rec cast/demo.cast \
+# Record to a temp path, not cast/demo.cast directly: the bottleneck bridge
+# runs `roar run` mid-demo, and a tracked file growing under cast/ would show
+# up in its dirty-tree refusal. Recording elsewhere keeps that beat clean —
+# on stage the only untracked file is test.txt, and the fallback should match.
+DEMO_TMP="$(mktemp -t roar-demo-cast).cast"
+AUTO=1 AUTO_PAUSE=3 asciinema rec "$DEMO_TMP" \
   --cols 100 --rows 32 --overwrite \
   --title "roar — three-act demo" \
   -c "./demo.sh"
+mv "$DEMO_TMP" cast/demo.cast
 
 # --- the money beat, isolated ---------------------------------------------
 # Reproduce runs in a throwaway copy so the presentation repo is untouched.
