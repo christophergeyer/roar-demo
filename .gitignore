@@ -3,3 +3,8 @@
 __pycache__/
 *.pyc
 cast/*.tmp
+
+# Pipeline outputs — all derived. Reproduction regenerates them from code.
+data/
+model.pkl
+metrics.json
