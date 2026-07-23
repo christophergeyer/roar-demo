@@ -15,7 +15,7 @@ import os
 import numpy as np
 import pandas as pd
 
-SEED = 815802763
+SEED = 1582741469
 RNG = np.random.default_rng(SEED)
 N = 400
 
