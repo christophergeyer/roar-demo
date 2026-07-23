@@ -1,0 +1,50 @@
+"""Generate the raw customer dataset. Seeded — byte-identical every run.
+
+This is the PII source. It writes real-looking personal columns
+(name, email, phone) alongside the modelling features, which is what
+makes `contains_pii=present` an honest tag rather than a demo prop.
+"""
+
+import numpy as np
+import pandas as pd
+
+RNG = np.random.default_rng(0)
+N = 400
+
+FIRST = ["Ana", "Ben", "Cara", "Dev", "Eli", "Fay", "Gus", "Hana"]
+LAST = ["Diaz", "Okafor", "Lindqvist", "Mehta", "Nakamura", "Rossi"]
+
+
+def main() -> None:
+    first = RNG.choice(FIRST, N)
+    last = RNG.choice(LAST, N)
+
+    tenure = RNG.integers(1, 72, N)
+    monthly = np.round(RNG.uniform(20, 120, N), 2)
+    support = RNG.poisson(1.5, N)
+
+    # Churn is a deterministic function of the features plus seeded noise,
+    # so the model has real signal and the metrics are stable.
+    logit = -2.5 + 0.05 * support * 2 + 0.02 * monthly - 0.04 * tenure
+    churn = (1 / (1 + np.exp(-logit)) > RNG.uniform(0, 1, N)).astype(int)
+
+    df = pd.DataFrame(
+        {
+            "customer_id": [f"C{i:04d}" for i in range(N)],
+            "name": [f"{f} {l}" for f, l in zip(first, last)],
+            "email": [f"{f}.{l}@example.com".lower() for f, l in zip(first, last)],
+            "phone": [f"555-01{RNG.integers(10, 99)}" for _ in range(N)],
+            "tenure_months": tenure,
+            "monthly_charges": monthly,
+            "support_calls": support,
+            "churn": churn,
+        }
+    )
+
+    df.to_csv("data/raw.csv", index=False)
+    print(f"wrote data/raw.csv  {len(df)} rows, {len(df.columns)} cols")
+    print("  PII columns: name, email, phone")
+
+
+if __name__ == "__main__":
+    main()
