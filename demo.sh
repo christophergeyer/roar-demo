@@ -26,7 +26,15 @@ fi
 c()   { printf '\n\033[1;36m%s\033[0m\n' "$1"; }              # act header
 say() { printf '\033[0;33m  “%s”\033[0m\n' "$1"; }            # what to SAY
 run() { printf '\n\033[1;32m$ %s\033[0m\n' "$*"; "$@"; }      # what to RUN
-beat() { printf '\n\033[2m── press ENTER ──\033[0m'; read -r _; }
+# Interactive by default. AUTO=1 advances on a timer instead of ENTER, which
+# is what cast/record.sh uses to capture the fallback recording.
+beat() {
+  if [ -n "${AUTO:-}" ]; then
+    printf '\n'; sleep "${AUTO_PAUSE:-2.5}"
+  else
+    printf '\n\033[2m── press ENTER ──\033[0m'; read -r _
+  fi
+}
 
 clear
 
@@ -72,8 +80,19 @@ beat
 if [ "$SHORT_CUT" = false ]; then
   say "Now actually do it. Clone the commit, build the env, re-run the pipeline."
   say "Watch the hash at the end."
-  printf '\033[2m  [NET] clones + pip installs. If wifi stalls → cast/reproduce.cast\033[0m\n'
-  run roar reproduce "$SHORT" --run -y
+  printf '\033[2m  [NET] clones + pip installs. If wifi stalls: Ctrl-C, then\033[0m\n'
+  printf '\033[2m        asciinema play cast/reproduce.cast\033[0m\n'
+
+  # Reproduce in a throwaway copy, NOT in this repo. Two reasons: roar would
+  # otherwise rebuild in place (overwriting outputs and opening a new session,
+  # which would hijack Act 3's view), and a scratch dir makes the "clean
+  # checkout" claim literally true rather than rhetorical.
+  REPRO=$(mktemp -d)
+  cp -R . "$REPRO/repo" 2>/dev/null
+  rm -rf "$REPRO/repo/.venv" "$REPRO/repo/data" "$REPRO/repo/model.pkl" \
+         "$REPRO/repo/metrics.json" "$REPRO/repo/cast"
+  ( cd "$REPRO/repo" && run roar reproduce "$SHORT" --run -y )
+  rm -rf "$REPRO"
   beat
   say "Same hash. Bit for bit. That is what dereferenceable means."
 else

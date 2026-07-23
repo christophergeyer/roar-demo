@@ -8,3 +8,6 @@ cast/*.tmp
 data/
 model.pkl
 metrics.json
+
+# Pre-bake output — regenerated each time, keeps the tree clean for roar run.
+ACT1_HASH.txt
