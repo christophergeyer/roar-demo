@@ -53,7 +53,8 @@ untouched — so you can run it back to back.
 
 | Act | Time | Beat | Command | Net |
 |---|---|---|---|---|
-| **1 — Wonder** | ~2 min | "This model is this hash" | *(paste the hash)* | |
+| **1 — Wonder** | ~2 min | b3sum the mystery file | `b3sum ~/Demo/unknown_model.pkl` | |
+| | | "This model is this hash" | *(paste the hash)* | |
 | | | The whole record | `roar show <hash>` | |
 | | | What it actually read | `roar inputs --all <hash>` | |
 | | | The pipeline shape | `roar dag` | |
@@ -61,6 +62,7 @@ untouched — so you can run it back to back.
 | | | The recorded plan | `roar reproduce <hash>` | |
 | | | Rebuild it for real | `roar reproduce <hash> --run` | **NET** |
 | **2 — Reveal** | ~30 s | "It was free" | `roar run python train.py` | |
+| | | *Bridge:* the bottleneck | `touch test.txt; roar run …` (refuses) | |
 | **3 — Payoff** | ~2 min | One human act | `roar tag show data/raw.csv` | |
 | | | **Blast radius** (hero) | `python taint.py` | |
 | | | It shows its work | `roar tag why contains_pii model.pkl` | |
@@ -68,15 +70,22 @@ untouched — so you can run it back to back.
 
 ### Act 1 — Wonder
 
-Walk on stage with the model already made. The hash is the whole opening: it
-isn't a checksum, it *dereferences*. `roar show` gives inputs, commit,
-environment, packages, timing, exit status. `roar inputs` gives every file the
-run actually read — observed at runtime, not declared in a config.
+Open in `~/Demo`, which holds exactly one file — `unknown_model.pkl`, no repo,
+no context, just bytes. `b3sum` it, and *that hash is the whole opening*: it
+isn't a checksum you compare, it *dereferences*. Paste it (browser, or `roar
+show <hash> --remote`) and the naked file blooms into full lineage.
+
+Then walk back to the repo. `roar show` gives inputs, commit, environment,
+packages, timing, exit status. `roar inputs` gives every file the run actually
+read — observed at runtime, not declared in a config.
 
 Then the money beat: **`roar reproduce` rebuilds the artifact from the hash
 alone** and the rebuilt hash is bit-identical. You don't have to trust me.
 
-### Act 2 — The reveal
+`prebake.sh` stages `~/Demo` for you — it wipes the dir to that one file and
+copies the model in as `unknown_model.pkl`. Set `DEMO_DIR=…` to stage elsewhere.
+
+### Act 2 — The reveal (and the bottleneck)
 
 One line, one breath:
 
@@ -87,6 +96,12 @@ $ roar run python train.py
 Everything in Act 1 came from typing that in front of the training command. No
 config, no instrumentation, no pipeline declaration. The reveal is that it was
 free.
+
+**Bridge beat (optional, ~15s):** free, but not *fooled*. `touch test.txt` then
+`roar run …` — it refuses, because it tags every run with the commit SHA and an
+untracked file means the commit alone can't explain what was on disk. That's the
+**bottleneck**: everything passes through the commit. It's also *why* the record
+in Act 3 is complete enough to catch what you never declared. Cut it when rushed.
 
 ### Act 3 — Payoff
 
@@ -119,9 +134,10 @@ at runtime, and every hash dereferences.
 
 **Cut order when the clock moves on you:**
 1. The train-on-test callback (Act 3 last beat)
-2. `roar tag why` — the blast radius alone carries Act 3
-3. `roar dag` in Act 1
-4. The live `--run` — show the instant preview and say "I can run this for real"
+2. The bottleneck bridge (dirty-repo refusal, Act 2 tail)
+3. `roar tag why` — the blast radius alone carries Act 3
+4. `roar dag` in Act 1
+5. The live `--run` — show the instant preview and say "I can run this for real"
 
 Never cut: the hash, `roar show`, and Act 2.
 

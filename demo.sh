@@ -42,8 +42,9 @@ clear
 c "ACT 1 — WONDER   (~2 min)   The record, and what anyone can do with it."
 # ===========================================================================
 
-say "This is a model I trained. I'm not going to show you the code yet."
-say "I'm going to show you its hash. This model IS this hash."
+# Before this script, in ~/Demo: b3sum unknown_model.pkl → look it up.
+say "That was a bare file — no repo, no context. I hashed it and looked it up."
+say "This model IS this hash. Now, back in the project, here's what it unfolds to."
 printf '\n\033[1;37m  %s\033[0m\n' "$HASH"
 beat
 
@@ -139,6 +140,19 @@ say "training command. No config. No instrumentation. No pipeline file."
 printf '\n\033[1;37m  $ roar run python train.py\033[0m\n'
 beat
 say "That's it. That's the whole integration. It was free."
+beat
+
+# --- BRIDGE — the bottleneck (optional, ~15s; cut when rushed) --------------
+say "Free, but not fooled. Watch what happens if the tree is dirty."
+run touch test.txt
+# roar refuses: it tags every run with the commit SHA, and an untracked file
+# means the commit alone can't explain what was on disk. That's the bottleneck.
+run roar run python evaluate.py
+rm -f test.txt
+beat
+say "It won't record a run it can't pin to exact code. Everything passes"
+say "through the commit — that's the bottleneck. Which is why the record you're"
+say "about to see is complete enough to catch what I never declared."
 beat
 
 # ===========================================================================
