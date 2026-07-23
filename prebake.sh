@@ -5,11 +5,16 @@
 # Builds the pipeline under roar, tags the PII source, registers the lineage
 # with GLaaS, and prints the hash you paste in Act 1.
 #
-#   ./prebake.sh                      # local only (no GLaaS registration)
-#   SCOPE=treqs/roar-demo ./prebake.sh   # register under a TReqs project scope
+#   ./prebake.sh                    # registers under the default scope below
+#   SCOPE=treqs/other ./prebake.sh  # override the scope
+#   SCOPE=none ./prebake.sh         # build locally, skip GLaaS registration
 # ---------------------------------------------------------------------------
 set -euo pipefail
 cd "$(dirname "$0")"
+
+# Where the Act 1 artifact gets registered so the hash resolves on glaas.ai.
+# Defaults to the demo project; override with SCOPE=..., or SCOPE=none to skip.
+SCOPE="${SCOPE:-treqs/roar-demo}"
 
 say() { printf '\n\033[1;36m▸ %s\033[0m\n' "$1"; }
 warn() { printf '\033[1;33m! %s\033[0m\n' "$1"; }
@@ -103,16 +108,17 @@ roar label set artifact "$MODEL_HASH" \
 echo "license.id, documentation.url, description"
 
 # --- publish ---------------------------------------------------------------
-if [ -n "${SCOPE:-}" ]; then
+if [ "$SCOPE" != "none" ]; then
   say "Registering with GLaaS under scope: $SCOPE"
   roar scope use "$SCOPE"
-  roar register "$MODEL_HASH" -y
-  # Registering an artifact implies binding its tags to cross-session scope,
-  # so the PII tag survives beyond this session. Explicit here for clarity.
+  # Register by path, not by hash: under 0.4.1 a bare hash is read as a session
+  # ref ("No local session matches ..."), whereas the path registers the
+  # artifact and, per roar, implies binding its tags to cross-session scope.
+  roar register model.pkl -y
   roar tag bind model.pkl metrics.json || true
 else
-  warn "SCOPE not set — skipping GLaaS registration."
-  warn "Act 1's browser beat needs this. Re-run as: SCOPE=<org>/<project> ./prebake.sh"
+  warn "SCOPE=none — skipping GLaaS registration (local build only)."
+  warn "Act 1's browser beat needs registration. Re-run without SCOPE=none."
 fi
 
 # --- the hash --------------------------------------------------------------
