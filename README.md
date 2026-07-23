@@ -14,8 +14,13 @@ you get cut off after Act 2, the audience has already seen the whole value.
 
 ```bash
 git clone <this repo> && cd roar-demo
-SCOPE=treqs/<project> ./prebake.sh
+roar auth login          # once, so registration can publish to glaas.ai
+./prebake.sh             # registers under treqs/roar-demo by default
 ```
+
+`prebake.sh` defaults `SCOPE=treqs/roar-demo`, so a plain run registers the
+artifact and the hash resolves on glaas.ai. Override with `SCOPE=treqs/other`,
+or `SCOPE=none ./prebake.sh` to build locally without publishing.
 
 Prints the hash you paste on stage and writes it to `ACT1_HASH.txt`.
 **Never build the artifact live.** Each bake picks a fresh random seed, commits
