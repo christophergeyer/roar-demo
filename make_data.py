@@ -15,7 +15,7 @@ import os
 import numpy as np
 import pandas as pd
 
-SEED = 0  # prebake.sh rewrites this line each bake — keep the format exact.
+SEED = 1308280956
 RNG = np.random.default_rng(SEED)
 N = 400
 
