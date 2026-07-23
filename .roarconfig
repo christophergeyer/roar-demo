@@ -1,0 +1,4 @@
+[filters]
+ignore_paths = [
+    ".CFUserTextEncoding",
+]

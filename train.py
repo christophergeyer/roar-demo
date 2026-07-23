@@ -6,12 +6,16 @@ shows up is in what the process actually read at runtime.
 """
 
 import pickle
+import warnings
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 FEATURES = ["tenure_months", "monthly_charges", "support_calls"]
+
+# Keep the stage output clean — scipy/sklearn emit a benign solver notice.
+warnings.filterwarnings("ignore")
 
 
 def main() -> None:

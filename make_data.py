@@ -23,9 +23,11 @@ def main() -> None:
     monthly = np.round(RNG.uniform(20, 120, N), 2)
     support = RNG.poisson(1.5, N)
 
-    # Churn is a deterministic function of the features plus seeded noise,
-    # so the model has real signal and the metrics are stable.
-    logit = -2.5 + 0.05 * support * 2 + 0.02 * monthly - 0.04 * tenure
+    # Churn is a function of standardised features plus seeded noise: real,
+    # learnable signal (AUC ~0.85) so the eval numbers look like a model
+    # someone would actually ship, and identical on every run.
+    z = lambda a: (a - a.mean()) / a.std()
+    logit = -0.6 + 0.9 * z(support) + 1.1 * z(monthly) - 1.4 * z(tenure)
     churn = (1 / (1 + np.exp(-logit)) > RNG.uniform(0, 1, N)).astype(int)
 
     df = pd.DataFrame(
