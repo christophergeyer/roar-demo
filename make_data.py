@@ -5,6 +5,8 @@ This is the PII source. It writes real-looking personal columns
 makes `contains_pii=present` an honest tag rather than a demo prop.
 """
 
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -16,6 +18,9 @@ LAST = ["Diaz", "Okafor", "Lindqvist", "Mehta", "Nakamura", "Rossi"]
 
 
 def main() -> None:
+    # data/ is gitignored — a fresh clone (or a `roar reproduce`) starts without it.
+    os.makedirs("data", exist_ok=True)
+
     first = RNG.choice(FIRST, N)
     last = RNG.choice(LAST, N)
 
