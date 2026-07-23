@@ -121,6 +121,17 @@ else
   warn "Act 1's browser beat needs registration. Re-run without SCOPE=none."
 fi
 
+# --- stage the "mystery file" ----------------------------------------------
+# A naked copy of the model, no roar project around it, for the opening beat:
+# b3sum it, paste the hash, watch it dereference. The dir is emptied to
+# exactly one file so nothing else is on screen. Override with DEMO_DIR=...
+DEMO_DIR="${DEMO_DIR:-$HOME/Demo}"
+say "Staging the mystery file in $DEMO_DIR"
+rm -rf "${DEMO_DIR:?}"          # :? guards against an empty/unset expansion
+mkdir -p "$DEMO_DIR"
+cp model.pkl "$DEMO_DIR/unknown_model.pkl"
+echo "  $DEMO_DIR/unknown_model.pkl  ($(b3sum "$DEMO_DIR/unknown_model.pkl" 2>/dev/null | cut -c1-12 || echo 'b3sum: install for the live hash'))"
+
 # --- the hash --------------------------------------------------------------
 cat <<EOF
 
@@ -134,6 +145,7 @@ $(printf '\033[1;32m')╔══════════════════�
   metrics: $(cat metrics.json | tr -d '\n ' )
 
   Saved to ACT1_HASH.txt
+  Mystery file: $DEMO_DIR/unknown_model.pkl  (b3sum → this hash)
 EOF
 
 echo "$MODEL_HASH" > ACT1_HASH.txt
