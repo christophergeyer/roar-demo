@@ -127,8 +127,11 @@ fi
 # exactly one file so nothing else is on screen. Override with DEMO_DIR=...
 DEMO_DIR="${DEMO_DIR:-$HOME/Demo}"
 say "Staging the mystery file in $DEMO_DIR"
-rm -rf "${DEMO_DIR:?}"          # :? guards against an empty/unset expansion
 mkdir -p "$DEMO_DIR"
+# Empty the CONTENTS (including dotfiles) but keep the dir itself, so a shell
+# already sitting in $DEMO_DIR stays valid — it just needs to `ls` again.
+# -mindepth 1 spares the dir; :? guards against an empty/unset expansion.
+find "${DEMO_DIR:?}" -mindepth 1 -delete
 cp model.pkl "$DEMO_DIR/unknown_model.pkl"
 echo "  $DEMO_DIR/unknown_model.pkl  ($(b3sum "$DEMO_DIR/unknown_model.pkl" 2>/dev/null | cut -c1-12 || echo 'b3sum: install for the live hash'))"
 
