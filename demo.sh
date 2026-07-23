@@ -92,7 +92,25 @@ if [ "$SHORT_CUT" = false ]; then
   rm -rf "$REPRO/repo/.venv" "$REPRO/repo/data" "$REPRO/repo/model.pkl" \
          "$REPRO/repo/metrics.json" "$REPRO/repo/cast"
   ( cd "$REPRO/repo" && run roar reproduce "$SHORT" --run -y )
+
+  # roar reports which steps ran, but not "the artifact came out identical".
+  # That comparison IS the point of the beat, so state it explicitly.
+  REBUILT=$( cd "$REPRO/repo" && roar dag --json --show-artifacts 2>/dev/null | python -c "
+import json,sys
+try:
+    d = json.load(sys.stdin)
+    print(next(a['hash'] for a in d['artifacts'] if a['path'].endswith('model.pkl')))
+except Exception:
+    print('')")
   rm -rf "$REPRO"
+
+  printf '\n  rebuilt  \033[1;37m%s\033[0m\n' "${REBUILT:-<none>}"
+  printf   '  original \033[1;37m%s\033[0m\n' "$HASH"
+  if [ "$REBUILT" = "$HASH" ]; then
+    printf '\n\033[1;32m  ██  IDENTICAL  ██\033[0m\n'
+  else
+    printf '\n\033[1;31m  ✗ mismatch — fall back to cast/reproduce.cast\033[0m\n'
+  fi
   beat
   say "Same hash. Bit for bit. That is what dereferenceable means."
 else
