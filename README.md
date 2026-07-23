@@ -18,9 +18,19 @@ SCOPE=treqs/<project> ./prebake.sh
 ```
 
 Prints the hash you paste on stage and writes it to `ACT1_HASH.txt`.
-**Never build the artifact live.** Pre-bake is idempotent — re-run it as often
-as you like. It clears `.roar/` each time so `roar show` reports a single clean
-producer rather than "Produced by (4 jobs)" from your rehearsals.
+**Never build the artifact live.** Each bake picks a fresh random seed, commits
+it, pushes it, and produces a **new hash and a new session** — so rehearse
+freely, then do one final bake right before you walk on. It clears `.roar/`
+each time so `roar show` reports a single clean producer rather than "Produced
+by (4 jobs)" from your rehearsals.
+
+**Order matters, because the hash changes each bake:**
+
+```
+1. ./prebake.sh          ← final bake; note the hash
+2. ./cast/record.sh      ← records fallbacks against THAT hash
+3. don't bake again      ← or the recording won't match your slide
+```
 
 Then rehearse:
 
@@ -153,7 +163,7 @@ with a screen recorder (macOS: Cmd-Shift-5) and save as `cast/glaas-aibom.mov`.
 
 ## The pipeline
 
-Four steps, CPU-only, ~6 seconds total, fully deterministic.
+Four steps, CPU-only, ~6 seconds total, deterministic given the baked seed.
 
 ```
 @1 generate    make_data.py    → data/raw.csv       [tagged contains_pii]
@@ -162,10 +172,18 @@ Four steps, CPU-only, ~6 seconds total, fully deterministic.
 @4 evaluate    evaluate.py     → metrics.json
 ```
 
-Seeded throughout (`numpy` `default_rng(0)`, `random_state=0`), so the metrics
-are identical every run — `accuracy 0.73`, `roc_auc 0.8396` — and `model.pkl`
-hashes to the same value on every machine. That stability is what makes the
-reproduce beat work.
+Deterministic *given a seed*. `prebake.sh` picks a fresh random seed each bake,
+writes it into `make_data.py`, and commits it — so **every bake yields a unique
+hash and a unique session**, while `roar reproduce` still rebuilds any given
+hash bit-for-bit, because it checks out the commit that carries that seed. Set
+`FIXED_SEED=<n> ./prebake.sh` to pin a value for a scripted rehearsal.
+
+Two consequences of per-bake hashes:
+- **The metrics move a little each bake** (~`accuracy 0.7x`, `roc_auc 0.8x`) —
+  stable within one artifact, not across bakes.
+- **The fallback casts are only valid for the most recent bake.** Record them
+  *after* your final pre-talk prebake, or the hash in the recording won't match
+  the one you paste. See below.
 
 `data/`, `model.pkl` and `metrics.json` are gitignored: everything is derived,
 and reproduction regenerates it all from code.

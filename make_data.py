@@ -1,4 +1,9 @@
-"""Generate the raw customer dataset. Seeded — byte-identical every run.
+"""Generate the raw customer dataset.
+
+Deterministic *given the seed*. `prebake.sh` rewrites SEED below and commits
+it, so each bake produces a fresh artifact (new hash, new session) while
+`roar reproduce` still rebuilds any given hash bit-for-bit — it checks out the
+commit that carries that seed.
 
 This is the PII source. It writes real-looking personal columns
 (name, email, phone) alongside the modelling features, which is what
@@ -10,7 +15,8 @@ import os
 import numpy as np
 import pandas as pd
 
-RNG = np.random.default_rng(0)
+SEED = 0  # prebake.sh rewrites this line each bake — keep the format exact.
+RNG = np.random.default_rng(SEED)
 N = 400
 
 FIRST = ["Ana", "Ben", "Cara", "Dev", "Eli", "Fay", "Gus", "Hana"]

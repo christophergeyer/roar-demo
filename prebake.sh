@@ -49,6 +49,30 @@ if ! git remote get-url origin >/dev/null 2>&1; then
   warn "Add one first:  git remote add origin git@github.com:treqs/roar-demo.git"
 fi
 
+# --- fresh seed ------------------------------------------------------------
+# A new seed each bake gives a unique hash and a unique session. It MUST be
+# committed: `roar reproduce` clones the recorded commit, so the seed has to
+# travel with it — otherwise the rebuilt hash wouldn't match. Set FIXED_SEED
+# to pin a value (e.g. for a scripted rehearsal); otherwise it's random.
+SEED="${FIXED_SEED:-$(python -c 'import secrets; print(secrets.randbelow(2**31))')}"
+say "Baking seed $SEED into make_data.py"
+python - "$SEED" <<'PY'
+import re, sys
+seed = sys.argv[1]
+path = "make_data.py"
+src = open(path).read()
+new, n = re.subn(r"^SEED = .*$", f"SEED = {seed}", src, count=1, flags=re.M)
+if n != 1:
+    sys.exit("could not find the 'SEED = ...' line in make_data.py")
+open(path, "w").write(new)
+PY
+git commit -q -m "prebake: seed $SEED" -- make_data.py
+
+if git remote get-url origin >/dev/null 2>&1; then
+  echo "pushing seed commit so reproduce can clone it"
+  git push -q origin HEAD || warn "push failed — cold 'reproduce --run' won't find this commit"
+fi
+
 echo "commit:  $(git rev-parse --short HEAD)"
 echo "remote:  $(git remote get-url origin 2>/dev/null || echo 'none')"
 
